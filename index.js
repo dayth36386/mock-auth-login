@@ -179,7 +179,7 @@ app.post("/login", (req, res) => {
     access_token: "jwt_access_token",
     user: {
       id: 123,
-      email: "user@example.com",
+      email: "test@gmail.com",
       name: "User Name",
     },
   });
