@@ -1,4 +1,3 @@
-// index.js
 const express = require("express");
 const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
@@ -6,24 +5,27 @@ const swaggerUi = require("swagger-ui-express");
 const app = express();
 app.use(express.json());
 
-// เก็บสถานะล็อกและเวลาล็อกใน RAM
-const failedLoginAttempts = {};
-const lockTime = {};
+const PORT = process.env.PORT || 3000;
 
-const options = {
+// เก็บจำนวนพยายาม login ที่ล้มเหลว
+const failedLoginAttempts = {};
+const lockTime = {}; // เก็บเวลาที่ล็อก
+
+// ---------- Swagger Config ----------
+const swaggerOptions = {
   definition: {
     openapi: "3.0.0",
     info: {
       title: "Mock Login API",
       version: "1.0.0",
-      description: "Mock Login API with lockout feature",
+      description: "API สำหรับทดสอบ Login พร้อมระบบล็อกบัญชีและ error format",
     },
   },
-  apis: ["./index.js"],
+  apis: [__filename],
 };
 
-const specs = swaggerJsdoc(options);
-app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
+const swaggerSpec = swaggerJsdoc(swaggerOptions);
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 /**
  * @swagger
@@ -74,25 +76,25 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
  *                 id: 123
  *                 email: user@example.com
  *                 name: User Name
- *     400:
- *      description: Bad Request - Missing fields
- *       content:
- *         application/json:
- *          schema:
- *            type: object
- *            properties:
- *              message:
- *                type: string
- *                example: common.invalid_request
- *              errors:
- *                type: object
- *                additionalProperties:
- *                  type: string
- *            example:
- *              message: common.invalid_request
- *              errors:
- *                email: "must have required property 'email'"
- *                password: "must have required property 'password'"
+ *       400:
+ *         description: Bad Request - Missing fields
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: common.invalid_request
+ *                 errors:
+ *                   type: object
+ *                   additionalProperties:
+ *                     type: string
+ *             example:
+ *               message: common.invalid_request
+ *               errors:
+ *                 email: "must have required property 'email'"
+ *                 password: "must have required property 'password'"
  *       401:
  *         description: Invalid password
  *         content:
@@ -127,8 +129,21 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
  *             example:
  *               message: login.5_incorrect_password
  */
+
+// ---------- API Login ----------
 app.post("/login", (req, res) => {
   const { email, password } = req.body;
+
+  // ตรวจสอบว่าถูกล็อกอยู่ไหม
+  if (lockTime[email]) {
+    const lockedAt = lockTime[email];
+    if (Date.now() - lockedAt < 15 * 60 * 1000) {
+      return res.status(423).json({ message: "login.5_incorrect_password" });
+    } else {
+      delete failedLoginAttempts[email];
+      delete lockTime[email];
+    }
+  }
 
   // Validate required fields
   const errors = {};
@@ -141,60 +156,40 @@ app.post("/login", (req, res) => {
     });
   }
 
-  // Auto unlock after 15 minutes
-  if (lockTime[email]) {
-    const lockedAt = lockTime[email];
-    const now = Date.now();
-    if (now - lockedAt > 15 * 60 * 1000) {
-      // 15 mins
-      delete failedLoginAttempts[email];
-      delete lockTime[email];
-    }
-  }
-
-  // Check if locked
-  if (failedLoginAttempts[email] && failedLoginAttempts[email] >= 5) {
-    return res.status(423).json({
-      message: "login.5_incorrect_password",
-    });
-  }
-
-  // Check email
+  // ตรวจสอบ email/password
   if (email !== "test@gmail.com") {
-    return res.status(404).json({
-      message: "login.email_not_found",
-    });
+    return res.status(404).json({ message: "login.email_not_found" });
   }
 
-  // Check password
-  if (password === "test123") {
-    failedLoginAttempts[email] = 0;
-    delete lockTime[email];
-    return res.status(200).json({
-      message: "Login successful",
-      access_token: "jwt_access_token",
-      user: {
-        id: 123,
-        email: "user@example.com",
-        name: "User Name",
-      },
-    });
-  } else {
+  if (password !== "test123") {
     failedLoginAttempts[email] = (failedLoginAttempts[email] || 0) + 1;
     if (failedLoginAttempts[email] >= 5) {
       lockTime[email] = Date.now();
+      return res.status(423).json({ message: "login.5_incorrect_password" });
     }
-    return res.status(401).json({
-      message: "login.invalid_password",
-    });
+    return res.status(401).json({ message: "login.invalid_password" });
   }
+
+  // สำเร็จ ล้างข้อมูลพยายามผิด
+  failedLoginAttempts[email] = 0;
+  delete lockTime[email];
+
+  return res.json({
+    message: "Login successful",
+    access_token: "jwt_access_token",
+    user: {
+      id: 123,
+      email: "user@example.com",
+      name: "User Name",
+    },
+  });
 });
 
 /**
  * @swagger
  * /unlock:
  *   post:
- *     summary: Unlock user account (admin or user request)
+ *     summary: Unlock account (admin only)
  *     requestBody:
  *       required: true
  *       content:
@@ -212,37 +207,32 @@ app.post("/login", (req, res) => {
  *         description: Account unlocked
  *         content:
  *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
  *             example:
  *               message: Account test@gmail.com unlocked.
  *       400:
  *         description: Missing email
  *         content:
  *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
  *             example:
- *               message: email_is_required
+ *               message: common.invalid_request
+ *               errors:
+ *                 email: "must have required property 'email'"
  */
+
+// ---------- API Unlock ----------
 app.post("/unlock", (req, res) => {
   const { email } = req.body;
   if (!email) {
-    return res.status(400).json({ message: "email_is_required" });
+    return res.status(400).json({
+      message: "common.invalid_request",
+      errors: { email: "must have required property 'email'" },
+    });
   }
   delete failedLoginAttempts[email];
   delete lockTime[email];
   return res.json({ message: `Account ${email} unlocked.` });
 });
 
-const PORT = process.env.PORT || 666;
 app.listen(PORT, () => {
-  console.log(`Mock API running on http://localhost:${PORT}`);
-  console.log(`Swagger docs at http://localhost:${PORT}/api-docs`);
+  console.log(`Server running on port ${PORT}`);
 });
