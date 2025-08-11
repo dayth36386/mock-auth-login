@@ -74,31 +74,25 @@ app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
  *                 id: 123
  *                 email: user@example.com
  *                 name: User Name
- *       400:
- *         description: Bad Request - Missing fields
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 message:
- *                   type: string
- *                 errors:
- *                   type: object
- *                   properties:
- *                     email:
- *                       type: array
- *                       items:
- *                         type: string
- *                     password:
- *                       type: array
- *                       items:
- *                         type: string
- *             example:
- *               message: invalid_request
- *               errors:
- *                 email: ["email_is_required"]
- *                 password: ["password_is_required"]
+ *     400:
+ *      description: Bad Request - Missing fields
+ *       content:
+ *         application/json:
+ *          schema:
+ *            type: object
+ *            properties:
+ *              message:
+ *                type: string
+ *                example: common.invalid_request
+ *              errors:
+ *                type: object
+ *                additionalProperties:
+ *                  type: string
+ *            example:
+ *              message: common.invalid_request
+ *              errors:
+ *                email: "must have required property 'email'"
+ *                password: "must have required property 'password'"
  *       401:
  *         description: Invalid password
  *         content:
