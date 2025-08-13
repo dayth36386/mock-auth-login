@@ -219,7 +219,36 @@ app.post("/login", (req, res) => {
  *               message: common.invalid_request
  *               errors:
  *                 email: "must have required property 'email'"
+  *     responses:
+ *       200:
+ *         description: Login success via SSO
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 access_token:
+ *                   type: string
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     email:
+ *                       type: string
+ *                     name:
+ *                       type: string
+ *             example:
+ *               message: login.success
+ *               access_token: jwt_access_token
+ *               user:
+ *                 id: 123
+ *                 email: user@example.com
+ *                 name: User Name
  */
+
 
 // ---------- API Unlock ----------
 app.post("/unlock", (req, res) => {
