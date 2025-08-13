@@ -234,6 +234,20 @@ app.post("/unlock", (req, res) => {
   delete lockTime[email];
   return res.json({ message: `Account ${email} unlocked.` });
 });
+app.post("/sso", (req, res) => {
+  const { provider, token } = req.body;
+
+  // ไม่มีตรวจจริง แค่ตอบ 200 ทุกกรณี
+  return res.status(200).json({
+    message: "login.success",
+    access_token: "jwt_access_token",
+    user: {
+      id: 123,
+      email: "user@example.com",
+      name: "User Name",
+    },
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
