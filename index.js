@@ -4,7 +4,7 @@ const swaggerJsdoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
 const app = express();
-app.use(cors());       
+app.use(cors());
 app.use(express.json());
 
 const PORT = process.env.PORT || 3000;
@@ -27,6 +27,31 @@ const swaggerOptions = {
 };
 
 const swaggerSpec = swaggerJsdoc(swaggerOptions);
+
+// ฟังก์ชันแยก slug จาก hostname
+function extractTenantSlug(hostname) {
+  if (!hostname) return null;
+
+  const parts = hostname.split(".");
+  if (parts.length >= 2) {
+    return parts[0]; // 'tenant1.localhost' => 'tenant1'
+  }
+
+  return null;
+}
+
+// Middleware: ดึง slug ใส่ใน req
+app.use((req, res, next) => {
+  const hostname = req.hostname; // เช่น tenant1.localhost
+  const slug = extractTenantSlug(hostname);
+
+  console.log("Hostname:", hostname);
+  console.log("Tenant Slug:", slug);
+
+  req.tenantSlug = slug;
+  next();
+});
+
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 /**
@@ -221,7 +246,6 @@ app.post("/login", (req, res) => {
  *                 email: "must have required property 'email'"
  */
 
-
 // ---------- API Unlock ----------
 app.post("/unlock", (req, res) => {
   const { email } = req.body;
@@ -247,6 +271,313 @@ app.post("/sso", (req, res) => {
       email: "user@example.com",
       name: "User Name",
     },
+  });
+});
+
+app.post("/api/forgot-password", (req, res) => {
+  console.log(req.body);
+
+  const { email } = req.body;
+  console.log(email);
+  const mockEmail = [
+    "testuser01@example.com",
+    "dummy.acc02@mailinator.com",
+    "john.doe93@testmail.com",
+    "qa.fake03@mockmail.net",
+    "sample_user04@fakemail.org",
+    "test.email05@tempmail.dev",
+    "random.tester06@devnull.com",
+    "emailtest07@trymail.io",
+    "mockup08@testingmail.com",
+    "fakemail09@nowhere.net",
+  ];
+
+  if (email == "") {
+    return res.status(400).json({
+      message: "common.invalid_request",
+      error: { email: ["common.email_required"] },
+    });
+  }
+
+  const findEmail = mockEmail.find((item) => item === email);
+  if (findEmail) {
+    return res.status(200).json({
+      message: "forgot_password.email_sent",
+    });
+  }
+  if (!findEmail) {
+    return res.status(404).json({
+      message: "forgot_password.email_not_found",
+    });
+  }
+  return res.status(500).json({
+    message: "common.internal_server_error",
+  });
+});
+
+app.get("/api/tenant", (req, res) => {
+  const tenantSlug = req.tenantSlug;
+  const token = req.headers["authorization"];
+  // if (!token) {
+  //   res.status(401).json({
+  //     error: 'Authentication Error',
+  //     message: 'Authorization token is required',
+  //   })
+  // }
+  if (!tenantSlug) {
+    res.status(400).json({
+      message: "common.invalid_request",
+    });
+  }
+  const mockTenantConfigs = [
+    {
+      tenant: {
+        id: "uuid-tenant-1",
+        slug: "testtenant",
+        name: "Test Tenant",
+        configKeys: [
+          "primary_color",
+          "secondary_color",
+          "logo_url",
+          "login.microsoft",
+          "login.google",
+        ],
+        createdAt: "2025-07-31T09:00:00.000Z",
+        updatedAt: "2025-07-31T09:00:00.000Z",
+      },
+      locales: [
+        {
+          id: "uuid-locale-1",
+          tenantId: "uuid-tenant-1",
+          locale: "en",
+          i18nConfig: {
+            login: {
+              google: "Sign in with Google",
+              microsoft: "Sign in with Microsoft",
+              invalid_password:
+                "Incorrect password or Email Please verify and try again",
+              email_not_found:
+                "Email not found in the system Please double-check or contact your system administrator. {Data config}",
+              "5_incorrect_password":
+                "You have entered the wrong password 5 times The system has temporarily locked your account. Please contact the administrator to unlock it. {Data config}",
+            },
+          },
+          isDefault: true,
+          enabled: true,
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+        },
+        {
+          id: "uuid-locale-2",
+          tenantId: "uuid-tenant-1",
+          locale: "th",
+          i18nConfig: {
+            login: {
+              google: "เข้าสู่ระบบด้วย Google",
+              microsoft: "เข้าสู่ระบบด้วย Microsoft",
+              invalid_password: "รหัสผ่านไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง",
+              email_not_found:
+                "ไม่พบ Email นี้ในระบบ กรุณาตรวจสอบอีกครั้ง หรือติดต่อผู้ดูแลระบบ",
+              "5_incorrect_password":
+                "คุณใส่รหัสผ่านผิดติดต่อกัน 5 ครั้ง ระบบได้ทำการล็อคบัญชีชั่วคราว กรุณาติดต่อผู้ดูแลระบบเพื่อปลดล็อคบัญชี",
+            },
+          },
+          isDefault: false,
+          enabled: true,
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+        },
+      ],
+      configs: {
+        "login.microsoft": {
+          id: "uuid-cfgv-3",
+          tenantId: "uuid-tenant-1",
+          locale: "th",
+          configKey: "login.microsoft",
+          configValue: "เข้าสู่ระบบด้วย Microsoft",
+          frontend: true,
+          enabled: true,
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+          configRegistry: {
+            id: "uuid-cfg-4",
+            configKey: "login.microsoft",
+            displayName: "Microsoft Login Text",
+            configType: "string",
+            description: "Text for Microsoft login button",
+            defaultValue: "Sign in with Microsoft",
+            isLocalizable: true,
+            isSensitive: false,
+            createdAt: "2025-07-31T09:00:00.000Z",
+            updatedAt: "2025-07-31T09:00:00.000Z",
+          },
+        },
+        "login.google": {
+          id: "uuid-cfgv-4",
+          tenantId: "uuid-tenant-1",
+          locale: "th",
+          configKey: "login.google",
+          configValue: "เข้าสู่ระบบด้วย Google",
+          frontend: true,
+          enabled: true,
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+          configRegistry: {
+            id: "uuid-cfg-5",
+            configKey: "login.google",
+            displayName: "Google Login Text",
+            configType: "string",
+            description: "Text for Google login button",
+            defaultValue: "Sign in with Google",
+            isLocalizable: true,
+            isSensitive: false,
+            createdAt: "2025-07-31T09:00:00.000Z",
+            updatedAt: "2025-07-31T09:00:00.000Z",
+          },
+        },
+        primary_color: {
+          id: "uuid-cfgv-5",
+          tenantId: "uuid-tenant-1",
+          locale: null,
+          configKey: "primary_color",
+          configValue: "#1976d2",
+          frontend: true,
+          enabled: true,
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+          configRegistry: {
+            id: "uuid-cfg-1",
+            configKey: "primary_color",
+            displayName: "Primary Color",
+            configType: "color",
+            description: "Main theme color",
+            defaultValue: "#1976d2",
+            isLocalizable: false,
+            isSensitive: false,
+            createdAt: "2025-07-31T09:00:00.000Z",
+            updatedAt: "2025-07-31T09:00:00.000Z",
+          },
+        },
+        secondary_color: {
+          id: "uuid-cfgv-6",
+          tenantId: "uuid-tenant-1",
+          locale: null,
+          configKey: "secondary_color",
+          configValue: "#ff9800",
+          frontend: true,
+          enabled: true,
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+          configRegistry: {
+            id: "uuid-cfg-2",
+            configKey: "secondary_color",
+            displayName: "Secondary Color",
+            configType: "color",
+            description: "Accent theme color",
+            defaultValue: "#ff9800",
+            isLocalizable: false,
+            isSensitive: false,
+            createdAt: "2025-07-31T09:00:00.000Z",
+            updatedAt: "2025-07-31T09:00:00.000Z",
+          },
+        },
+      },
+      ssoProviders: [
+        {
+          id: "uuid-sso-2",
+          tenantId: "uuid-tenant-1",
+          provider: "keycloak-google",
+          clientId: "xyz789",
+          clientSecret: "***",
+          config: {
+            scope: "openid email profile",
+          },
+          enabled: true,
+          i18nKey: "login.google",
+          url: "https://accounts.google.com/o/oauth2/v2/auth",
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+        },
+        {
+          id: "uuid-sso-1",
+          tenantId: "uuid-tenant-1",
+          provider: "keycloak.microsoft",
+          clientId: "abc123",
+          clientSecret: "***",
+          config: {
+            scope: "openid email profile",
+          },
+          enabled: true,
+          i18nKey: "login.microsoft",
+          url: "https://dev-auth.tcctech.app/realms/sphera/protocol/openid-connect/auth?client_id=sphera&response_type=code&redirect_uri=http%3A%2F%2Flocalhost%3A3000%2Fcallback&kc_idp_hint=microsoft2",
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+        },
+      ],
+      programs: [
+        {
+          id: "uuid-prog-1",
+          tenantId: "uuid-tenant-1",
+          parentMenu: "dashboard",
+          iconUrl: "https://image.com/test.png",
+          name: "Demo Program 1",
+          description: "For demonstration",
+          endpointPath: "/",
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+        },
+        {
+          id: "uuid-prog-2",
+          tenantId: "uuid-tenant-2",
+          parentMenu: "dashboard",
+          iconUrl: "https://image.com/test.png",
+          name: "Demo Program 2",
+          description: "For demonstration",
+          endpointPath: "/",
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+        },
+        {
+          id: "uuid-prog-3",
+          tenantId: "uuid-tenant-3",
+          parentMenu: "data entry",
+          iconUrl: "https://image.com/test.png",
+          name: "Demo Program 1",
+          description: "For demonstration",
+          endpointPath: "/",
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+        },
+        {
+          id: "uuid-prog-4",
+          tenantId: "uuid-tenant-4",
+          parentMenu: "data entry",
+          iconUrl: "https://image.com/test.png",
+          name: "Demo Program 2",
+          description: "For demonstration",
+          endpointPath: "/",
+          createdAt: "2025-07-31T09:00:00.000Z",
+          updatedAt: "2025-07-31T09:00:00.000Z",
+        },
+      ],
+    },
+  ];
+  const findTenant = mockTenantConfigs.find(
+    (item) => item.tenant.slug === tenantSlug
+  );
+  if (!findTenant) {
+    res.status(404).json({
+      message: "tenant.not_found",
+    });
+  }
+  if (findTenant) {
+    res.status(200).json({
+      ...findTenant,
+    });
+  }
+
+  res.status(500).json({
+    message: "common.internal_server_error",
   });
 });
 
