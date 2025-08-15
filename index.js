@@ -280,6 +280,7 @@ app.post("/api/forgot-password", (req, res) => {
   const { email } = req.body;
   console.log(email);
   const mockEmail = [
+    "test@gmail.com",
     "testuser01@example.com",
     "dummy.acc02@mailinator.com",
     "john.doe93@testmail.com",
