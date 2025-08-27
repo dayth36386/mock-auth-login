@@ -625,7 +625,7 @@ const users = Array.from({ length: 150 }, (_, i) => ({
 // ---------- User CRUD ----------
 
 // GET all users with pagination
-app.get("/users", (req, res) => {
+app.get("/v1/api/users", (req, res) => {
   const page = parseInt(req.query.page) || 1;
   const pageSize = parseInt(req.query.pageSize) || 10;
   const start = (page - 1) * pageSize;
@@ -642,14 +642,14 @@ app.get("/users", (req, res) => {
 });
 
 // GET user by id
-app.get("/users/id/:id", (req, res) => {
+app.get("/v1/api/users/:id", (req, res) => {
   const user = users.find((u) => u.id === req.params.id);
   if (!user) return res.status(404).json({ message: "user.not.found" });
   res.json(user);
 });
 
 // POST create new user
-app.post("/users", (req, res) => {
+app.post("/v1/api/users", (req, res) => {
   const newUser = {
     id: uuidv4(),
     ...req.body,
@@ -661,7 +661,7 @@ app.post("/users", (req, res) => {
 });
 
 // PUT update user
-app.put("/users/:id", (req, res) => {
+app.put("/v1/api/users/:id", (req, res) => {
   const index = users.findIndex((u) => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ message: "user.not.found" });
   users[index] = {
@@ -673,7 +673,7 @@ app.put("/users/:id", (req, res) => {
 });
 
 // DELETE user
-app.delete("/users/:id", (req, res) => {
+app.delete("/v1/api/users/:id", (req, res) => {
   const index = users.findIndex((u) => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ message: "user.not.found" });
   const deletedUser = users.splice(index, 1);
@@ -681,7 +681,7 @@ app.delete("/users/:id", (req, res) => {
 });
 /**
  * @swagger
- * /users:
+ * /v1/api/users:
  *   get:
  *     summary: Get all users with pagination
  *     parameters:
@@ -789,7 +789,7 @@ app.delete("/users/:id", (req, res) => {
 
 /**
  * @swagger
- * /users/id/{id}:
+ * /v1/api/users/{id}:
  *   get:
  *     summary: Get user by ID
  *     parameters:
@@ -824,7 +824,7 @@ app.delete("/users/:id", (req, res) => {
 
 /**
  * @swagger
- * /users/username/{username}:
+ * /v1/api/users/username/{username}:
  *   get:
  *     summary: Get user by username
  *     parameters:
@@ -858,7 +858,7 @@ app.delete("/users/:id", (req, res) => {
  */
 
 // ---------- GET user by username ----------
-app.get("/users/username/:username", (req, res) => {
+app.get("/v1/api/users/username/:username", (req, res) => {
   const { username } = req.params;
   const user = users.find((u) => u.username === username);
   if (!user) return res.status(404).json({ message: "user.not.found" });
@@ -867,7 +867,7 @@ app.get("/users/username/:username", (req, res) => {
 
 /**
  * @swagger
- * /users/email/{email}:
+ * /v1/api/users/email/{email}:
  *   get:
  *     summary: Get user by email
  *     parameters:
@@ -901,7 +901,7 @@ app.get("/users/username/:username", (req, res) => {
  */
 
 // ---------- GET user by email ----------
-app.get("/users/email/:email", (req, res) => {
+app.get("/v1/api/users/email/:email", (req, res) => {
   const { email } = req.params;
   const user = users.find((u) => u.email === email);
   if (!user) return res.status(404).json({ message: "user.not.found" });
@@ -911,7 +911,7 @@ app.get("/users/email/:email", (req, res) => {
 // ---------- PATCH update isActive status ----------
 /**
  * @swagger
- * /users/{id}/active:
+ * /v1/api/users/{id}/active:
  *   patch:
  *     summary: Update user's isActive status
  *     parameters:
@@ -948,7 +948,7 @@ app.get("/users/email/:email", (req, res) => {
  *             example:
  *               message: user.not.found
  */
-app.patch("/users/:id/active", (req, res) => {
+app.patch("/v1/api/users/:id/active", (req, res) => {
   const { id } = req.params;
   const { isActive } = req.body;
 
