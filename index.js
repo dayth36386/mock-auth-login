@@ -661,6 +661,81 @@ app.post("/v1/api/users", (req, res) => {
 });
 
 // PUT update user
+/**
+ * @swagger
+ * /v1/api/users/{id}:
+ *   put:
+ *     summary: Update user by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: uuid-user-1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               firstname:
+ *                 type: string
+ *               lastname:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *               isActive:
+ *                 type: boolean
+ *             example:
+ *               email: user1@example.com
+ *               firstname: First1
+ *               lastname: Last1
+ *               type: standard
+ *               isActive: true
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 firstname:
+ *                   type: string
+ *                 lastname:
+ *                   type: string
+ *                 type:
+ *                   type: string
+ *                 isActive:
+ *                   type: boolean
+ *                 createdAt:
+ *                   type: string
+ *                 updatedAt:
+ *                   type: string
+ *             example:
+ *               id: uuid-user-1
+ *               email: user1@example.com
+ *               firstname: First1
+ *               lastname: Last1
+ *               type: standard
+ *               isActive: true
+ *               createdAt: "2025-08-14T02:23:43Z"
+ *               updatedAt: "2025-08-14T02:23:43Z"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: user.not.found
+ */
 app.put("/v1/api/users/:id", (req, res) => {
   const index = users.findIndex((u) => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ message: "user.not.found" });
