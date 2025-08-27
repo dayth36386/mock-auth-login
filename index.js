@@ -609,11 +609,11 @@ const users = Array.from({ length: 150 }, (_, i) => ({
   fax: `+66987654${String(21 + i).padStart(2, "0")}`,
   mobile: `+66888888${String(88 + i).padStart(2, "0")}`,
   additionalInformation: "VIP user",
-  isActive: true,
-  isLocked: false,
+  isActive: Math.random() < 0.5, // random true/false
+  isLocked: Math.random() < 0.5, // random true/false
   failedLoginAttempts: 0,
-  lastFailedLogin_at: new Date().toISOString(),
-  lastLoginAt: new Date().toISOString(),
+  lastFailedLogin_at: null,
+  lastLoginAt: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   deletedAt: null,
