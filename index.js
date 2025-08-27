@@ -642,9 +642,9 @@ app.get("/users", (req, res) => {
 });
 
 // GET user by id
-app.get("/users/:id", (req, res) => {
+app.get("/users/id/:id", (req, res) => {
   const user = users.find((u) => u.id === req.params.id);
-  if (!user) return res.status(404).json({ message: "User not found" });
+  if (!user) return res.status(404).json({ message: "user.not.found" });
   res.json(user);
 });
 
