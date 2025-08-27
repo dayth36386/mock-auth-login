@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 // เก็บจำนวนพยายาม login ที่ล้มเหลว
 const failedLoginAttempts = {};
@@ -582,6 +582,390 @@ app.get("/api/tenant", (req, res) => {
   });
 });
 
+const { v4: uuidv4 } = require("uuid");
+
+// สร้าง mock user data 150 รายการ
+const users = Array.from({ length: 150 }, (_, i) => ({
+  id: `uuid-user-${i + 1}`,
+  username: `user${i + 1}`,
+  email: `user${i + 1}@example.com`,
+  firstname: `First${i + 1}`,
+  lastname: `Last${i + 1}`,
+  type: "standard",
+  passwordPolicy: "default",
+  isPasswordSendEmail: false,
+  isDenyPasswordChange: false,
+  tenantId: `uuid-tenant-${i + 1}`,
+  tenantLocaleId: `uuid-locale-${i + 1}`,
+  timezoneId: `uuid-tz-${i + 1}`,
+  decimalSeparatorId: `uuid-decimal-${i + 1}`,
+  currencyId: `uuid-currency-${i + 1}`,
+  company: `Company ${i + 1}`,
+  street: `${i + 1} Main Street`,
+  city: "Bangkok",
+  countryId: `uuid-country-${i + 1}`,
+  poBox: `1000${i + 1}`,
+  phone: `+66123456${String(78 + i).padStart(2, "0")}`,
+  fax: `+66987654${String(21 + i).padStart(2, "0")}`,
+  mobile: `+66888888${String(88 + i).padStart(2, "0")}`,
+  additionalInformation: "VIP user",
+  isActive: true,
+  isLocked: false,
+  failedLoginAttempts: 0,
+  lastFailedLogin_at: null,
+  lastLoginAt: null,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  deletedAt: null,
+  createdBy: { id: "uuid-admin", username: "admin" },
+  updatedBy: { id: "uuid-admin", username: "admin" },
+  deletedBy: null,
+}));
+
+// ---------- User CRUD ----------
+
+// GET all users with pagination
+app.get("/users", (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const pageSize = parseInt(req.query.pageSize) || 10;
+  const start = (page - 1) * pageSize;
+  const end = start + pageSize;
+  res.json({
+    data: users.slice(start, end),
+    pagination: {
+      page,
+      pageSize,
+      totalItems: users.length,
+      totalPages: Math.ceil(users.length / pageSize),
+    },
+  });
+});
+
+// GET user by id
+app.get("/users/:id", (req, res) => {
+  const user = users.find((u) => u.id === req.params.id);
+  if (!user) return res.status(404).json({ message: "User not found" });
+  res.json(user);
+});
+
+// POST create new user
+app.post("/users", (req, res) => {
+  const newUser = {
+    id: uuidv4(),
+    ...req.body,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  users.push(newUser);
+  res.status(201).json(newUser);
+});
+
+// PUT update user
+app.put("/users/:id", (req, res) => {
+  const index = users.findIndex((u) => u.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: "user.not.found" });
+  users[index] = {
+    ...users[index],
+    ...req.body,
+    updatedAt: new Date().toISOString(),
+  };
+  res.json(users[index]);
+});
+
+// DELETE user
+app.delete("/users/:id", (req, res) => {
+  const index = users.findIndex((u) => u.id === req.params.id);
+  if (index === -1) return res.status(404).json({ message: "user.not.found" });
+  const deletedUser = users.splice(index, 1);
+  res.json(deletedUser[0]);
+});
+/**
+ * @swagger
+ * /users:
+ *   get:
+ *     summary: Get all users with pagination
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           example: 1
+ *       - in: query
+ *         name: pageSize
+ *         schema:
+ *           type: integer
+ *           example: 10
+ *     responses:
+ *       200:
+ *         description: List of users with pagination
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       firstname:
+ *                         type: string
+ *                       lastname:
+ *                         type: string
+ *                       type:
+ *                         type: string
+ *                       isActive:
+ *                         type: boolean
+ *                       createdAt:
+ *                         type: string
+ *                       updatedAt:
+ *                         type: string
+ *                 pagination:
+ *                   type: object
+ *                   properties:
+ *                     page:
+ *                       type: integer
+ *                     pageSize:
+ *                       type: integer
+ *                     totalItems:
+ *                       type: integer
+ *                     totalPages:
+ *                       type: integer
+ *
+ *   post:
+ *     summary: Create a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               firstname:
+ *                 type: string
+ *               lastname:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *               isActive:
+ *                 type: boolean
+ *             example:
+ *               email: user151@example.com
+ *               firstname: John
+ *               lastname: Doe
+ *               type: standard
+ *               isActive: true
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 firstname:
+ *                   type: string
+ *                 lastname:
+ *                   type: string
+ *                 type:
+ *                   type: string
+ *                 isActive:
+ *                   type: boolean
+ *                 createdAt:
+ *                   type: string
+ *                 updatedAt:
+ *                   type: string
+ */
+
+/**
+ * @swagger
+ * /users/id/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: uuid-user-1
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: uuid-user-1
+ *               username: user1
+ *               email: user1@example.com
+ *               firstname: First1
+ *               lastname: Last1
+ *               type: standard
+ *               isActive: true
+ *               createdAt: "2025-08-14T02:23:43Z"
+ *               updatedAt: "2025-08-14T02:23:43Z"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: user.not.found
+ */
+
+/**
+ * @swagger
+ * /users/username/{username}:
+ *   get:
+ *     summary: Get user by username
+ *     parameters:
+ *       - in: path
+ *         name: username
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: user10
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: uuid-user-10
+ *               username: user10
+ *               email: user10@example.com
+ *               firstname: First10
+ *               lastname: Last10
+ *               type: standard
+ *               isActive: true
+ *               createdAt: "2025-08-14T02:23:43Z"
+ *               updatedAt: "2025-08-14T02:23:43Z"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: user.not.found
+ */
+
+// ---------- GET user by username ----------
+app.get("/users/username/:username", (req, res) => {
+  const { username } = req.params;
+  const user = users.find((u) => u.username === username);
+  if (!user) return res.status(404).json({ message: "user.not.found" });
+  res.json(user);
+});
+
+/**
+ * @swagger
+ * /users/email/{email}:
+ *   get:
+ *     summary: Get user by email
+ *     parameters:
+ *       - in: path
+ *         name: email
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: user10@example.com
+ *     responses:
+ *       200:
+ *         description: User found
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: uuid-user-10
+ *               username: user10
+ *               email: user10@example.com
+ *               firstname: First10
+ *               lastname: Last10
+ *               type: standard
+ *               isActive: true
+ *               createdAt: "2025-08-14T02:23:43Z"
+ *               updatedAt: "2025-08-14T02:23:43Z"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: user.not.found
+ */
+
+// ---------- GET user by email ----------
+app.get("/users/email/:email", (req, res) => {
+  const { email } = req.params;
+  const user = users.find((u) => u.email === email);
+  if (!user) return res.status(404).json({ message: "user.not.found" });
+  res.json(user);
+});
+
+// ---------- PATCH update isActive status ----------
+/**
+ * @swagger
+ * /users/{id}/active:
+ *   patch:
+ *     summary: Update user's isActive status
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: uuid-user-1
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               isActive:
+ *                 type: boolean
+ *             example:
+ *               isActive: false
+ *     responses:
+ *       200:
+ *         description: User status updated
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: uuid-user-1
+ *               isActive: false
+ *               message: user.status_updated
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: user.not.found
+ */
+app.patch("/users/:id/active", (req, res) => {
+  const { id } = req.params;
+  const { isActive } = req.body;
+
+  const user = users.find((u) => u.id === id);
+  if (!user) {
+    return res.status(404).json({ message: "user.not.found" });
+  }
+
+  user.isActive = isActive;
+  user.updatedAt = new Date().toISOString();
+
+  res.status(200).json({
+    id: user.id,
+    isActive: user.isActive,
+    message: "user.status_updated",
+  });
+});
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
