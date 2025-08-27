@@ -673,6 +673,40 @@ app.put("/v1/api/users/:id", (req, res) => {
 });
 
 // DELETE user
+/**
+ * @swagger
+ * /v1/api/users/{id}:
+ *   delete:
+ *     summary: Delete user by ID
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *           example: uuid-user-1
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *         content:
+ *           application/json:
+ *             example:
+ *               id: uuid-user-1
+ *               username: user1
+ *               email: user1@example.com
+ *               firstname: First1
+ *               lastname: Last1
+ *               type: standard
+ *               isActive: true
+ *               createdAt: "2025-08-14T02:23:43Z"
+ *               updatedAt: "2025-08-14T02:23:43Z"
+ *       404:
+ *         description: User not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: user.not.found
+ */
 app.delete("/v1/api/users/:id", (req, res) => {
   const index = users.findIndex((u) => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ message: "user.not.found" });
