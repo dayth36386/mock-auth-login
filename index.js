@@ -7,7 +7,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000;
 
 // เก็บจำนวนพยายาม login ที่ล้มเหลว
 const failedLoginAttempts = {};
@@ -641,7 +641,7 @@ app.get("/v1/api/users", (req, res) => {
   });
 });
 
-// GET user by id
+// GET user by id (return all fields)
 app.get("/v1/api/users/:id", (req, res) => {
   const user = users.find((u) => u.id === req.params.id);
   if (!user) return res.status(404).json({ message: "user.not.found" });
