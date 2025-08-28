@@ -612,8 +612,8 @@ const users = Array.from({ length: 150 }, (_, i) => ({
   isActive: Math.random() < 0.5, // random true/false
   isLocked: Math.random() < 0.5, // random true/false
   failedLoginAttempts: 0,
-  lastFailedLogin_at: null,
-  lastLoginAt: null,
+  lastFailedLogin_at: new Date().toISOString(),
+  lastLoginAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   deletedAt: null,
