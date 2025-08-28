@@ -593,21 +593,21 @@ const users = Array.from({ length: 150 }, (_, i) => ({
   lastname: `Last${i + 1}`,
   type: "standard",
   passwordPolicy: "default",
-  isPasswordSendEmail: false,
-  isDenyPasswordChange: false,
+  isPasswordSendEmail: Math.random() < 0.5, // random true/false
+  isDenyPasswordChange: Math.random() < 0.5, // random true/false
   tenantId: `uuid-tenant-${i + 1}`,
-  tenantLocaleId: `uuid-locale-${i + 1}`,
+  tenantLocaleId: `th`,
   timezoneId: `uuid-tz-${i + 1}`,
-  decimalSeparatorId: `uuid-decimal-${i + 1}`,
+  decimalSeparatorId: `decimal_point`,
   currencyId: `uuid-currency-${i + 1}`,
   company: `Company ${i + 1}`,
   street: `${i + 1} Main Street`,
   city: "Bangkok",
   countryId: `uuid-country-${i + 1}`,
   poBox: `1000${i + 1}`,
-  phone: `+66123456${String(78 + i).padStart(2, "0")}`,
-  fax: `+66987654${String(21 + i).padStart(2, "0")}`,
-  mobile: `+66888888${String(88 + i).padStart(2, "0")}`,
+  phone: `66123456${String(78 + i).padStart(2, "0")}`,
+  fax: `66987654${String(21 + i).padStart(2, "0")}`,
+  mobile: `66888888${String(88 + i).padStart(2, "0")}`,
   additionalInformation: "VIP user",
   isActive: Math.random() < 0.5, // random true/false
   isLocked: Math.random() < 0.5, // random true/false
