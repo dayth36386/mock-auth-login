@@ -20,7 +20,7 @@ const swaggerOptions = {
     info: {
       title: "Mock Login API",
       version: "1.0.0",
-      description: "API สำหรับทดสอบ Login พร้อมระบบล็อกบัญชีและ error format",
+      description: "API Mock",
     },
   },
   apis: [__filename],
@@ -641,6 +641,48 @@ app.get("/v1/api/users", (req, res) => {
   });
 });
 
+/**
+ * @swagger
+ * /v1/api/users/all:
+ *   get:
+ *     summary: Get all users (no pagination)
+ *     responses:
+ *       200:
+ *         description: List of all users
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       username:
+ *                         type: string
+ *                       email:
+ *                         type: string
+ *                       firstname:
+ *                         type: string
+ *                       lastname:
+ *                         type: string
+ *                       type:
+ *                         type: string
+ *                       isActive:
+ *                         type: boolean
+ *                       createdAt:
+ *                         type: string
+ *                       updatedAt:
+ *                         type: string
+ */
+app.get("/v1/api/users/all", (req, res) => {
+  res.json({
+    data: users,
+  });
+});
 // GET user by id (return all fields)
 app.get("/v1/api/users/:id", (req, res) => {
   const user = users.find((u) => u.id === req.params.id);
