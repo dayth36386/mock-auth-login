@@ -645,10 +645,17 @@ const users = Array.from({ length: 150 }, (_, i) => ({
  * @swagger
  * /v1/api/users/:
  *   get:
- *     summary: Get all users (no pagination)
+ *     summary: Get all users (with optional search)
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *           example: '{"AND":[{"firstname":"John"},{"email":{"contains":"example.com"}}]}'
+ *         description: JSON string for filtering users. Supports AND/OR and contains.
  *     responses:
  *       200:
- *         description: List of all users
+ *         description: List of users matching search criteria
  *         content:
  *           application/json:
  *             schema:
@@ -678,11 +685,41 @@ const users = Array.from({ length: 150 }, (_, i) => ({
  *                       updatedAt:
  *                         type: string
  */
+
 app.get("/v1/api/users/", (req, res) => {
-  res.json({
-    data: users,
-  });
+  let filteredUsers = users;
+
+  if (req.query.search) {
+    try {
+      // Decode JSON query parameter
+      const search = JSON.parse(req.query.search);
+
+      const evaluateCondition = (user, condition) => {
+        if (condition.AND) {
+          return condition.AND.every((c) => evaluateCondition(user, c));
+        } else if (condition.OR) {
+          return condition.OR.some((c) => evaluateCondition(user, c));
+        } else {
+          // Single field condition
+          const key = Object.keys(condition)[0];
+          const value = condition[key];
+          if (typeof value === "object" && value.contains) {
+            return (user[key] || "").includes(value.contains);
+          } else {
+            return user[key] === value;
+          }
+        }
+      };
+
+      filteredUsers = users.filter((user) => evaluateCondition(user, search));
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid search format" });
+    }
+  }
+
+  res.json({ data: filteredUsers });
 });
+
 // GET user by id (return all fields)
 app.get("/v1/api/users/:id", (req, res) => {
   const user = users.find((u) => u.id === req.params.id);
