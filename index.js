@@ -888,7 +888,6 @@ app.put("/v1/api/users/:id", (req, res) => {
   res.json(users[index]);
 });
 
-// DELETE user
 /**
  * @swagger
  * /v1/api/users/{id}:
@@ -907,15 +906,7 @@ app.put("/v1/api/users/:id", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               id: uuid-user-1
- *               username: user1
- *               email: user1@example.com
- *               firstname: First1
- *               lastname: Last1
- *               type: standard
- *               isActive: true
- *               createdAt: "2025-08-14T02:23:43Z"
- *               updatedAt: "2025-08-14T02:23:43Z"
+ *               message: user.deleted
  *       404:
  *         description: User not found
  *         content:
@@ -926,8 +917,10 @@ app.put("/v1/api/users/:id", (req, res) => {
 app.delete("/v1/api/users/:id", (req, res) => {
   const index = users.findIndex((u) => u.id === req.params.id);
   if (index === -1) return res.status(404).json({ message: "user.not_found" });
-  const deletedUser = users.splice(index, 1);
-  res.json(deletedUser[0]);
+  users.splice(index, 1);
+  res.json({
+    message: "user.deleted",
+  });
 });
 /**
  * @swagger
