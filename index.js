@@ -727,6 +727,68 @@ app.get("/v1/api/users/:id", (req, res) => {
   res.json(user);
 });
 
+/**
+ * @swagger
+ * /v1/api/users:
+ *   post:
+ *     summary: Create a new user
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               firstname:
+ *                 type: string
+ *               lastname:
+ *                 type: string
+ *               type:
+ *                 type: string
+ *               isActive:
+ *                 type: boolean
+ *             example:
+ *               email: user151@example.com
+ *               firstname: John
+ *               lastname: Doe
+ *               type: standard
+ *               isActive: true
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 firstname:
+ *                   type: string
+ *                 lastname:
+ *                   type: string
+ *                 type:
+ *                   type: string
+ *                 isActive:
+ *                   type: boolean
+ *                 createdAt:
+ *                   type: string
+ *                 updatedAt:
+ *                   type: string
+ *             example:
+ *               id: uuid-user-151
+ *               email: user151@example.com
+ *               firstname: John
+ *               lastname: Doe
+ *               type: standard
+ *               isActive: true
+ *               createdAt: "2025-08-14T02:23:43Z"
+ *               updatedAt: "2025-08-14T02:23:43Z"
+ */
 // POST create new user
 app.post("/v1/api/users", (req, res) => {
   const newUser = {
