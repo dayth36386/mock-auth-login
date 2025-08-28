@@ -625,25 +625,25 @@ const users = Array.from({ length: 150 }, (_, i) => ({
 // ---------- User CRUD ----------
 
 // GET all users with pagination
-app.get("/v1/api/users", (req, res) => {
-  const page = parseInt(req.query.page) || 1;
-  const pageSize = parseInt(req.query.pageSize) || 10;
-  const start = (page - 1) * pageSize;
-  const end = start + pageSize;
-  res.json({
-    data: users.slice(start, end),
-    pagination: {
-      page,
-      pageSize,
-      totalItems: users.length,
-      totalPages: Math.ceil(users.length / pageSize),
-    },
-  });
-});
+// app.get("/v1/api/users/", (req, res) => {
+//   const page = parseInt(req.query.page) || 1;
+//   const pageSize = parseInt(req.query.pageSize) || 10;
+//   const start = (page - 1) * pageSize;
+//   const end = start + pageSize;
+//   res.json({
+//     data: users.slice(start, end),
+//     pagination: {
+//       page,
+//       pageSize,
+//       totalItems: users.length,
+//       totalPages: Math.ceil(users.length / pageSize),
+//     },
+//   });
+// });
 
 /**
  * @swagger
- * /v1/api/users/all:
+ * /v1/api/users/:
  *   get:
  *     summary: Get all users (no pagination)
  *     responses:
@@ -678,7 +678,7 @@ app.get("/v1/api/users", (req, res) => {
  *                       updatedAt:
  *                         type: string
  */
-app.get("/v1/api/users/all", (req, res) => {
+app.get("/v1/api/users/", (req, res) => {
   res.json({
     data: users,
   });
@@ -832,61 +832,6 @@ app.delete("/v1/api/users/:id", (req, res) => {
 });
 /**
  * @swagger
- * /v1/api/users:
- *   get:
- *     summary: Get all users with pagination
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *           example: 1
- *       - in: query
- *         name: pageSize
- *         schema:
- *           type: integer
- *           example: 10
- *     responses:
- *       200:
- *         description: List of users with pagination
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       id:
- *                         type: string
- *                       email:
- *                         type: string
- *                       firstname:
- *                         type: string
- *                       lastname:
- *                         type: string
- *                       type:
- *                         type: string
- *                       isActive:
- *                         type: boolean
- *                       createdAt:
- *                         type: string
- *                       updatedAt:
- *                         type: string
- *                 pagination:
- *                   type: object
- *                   properties:
- *                     page:
- *                       type: integer
- *                     pageSize:
- *                       type: integer
- *                     totalItems:
- *                       type: integer
- *                     totalPages:
- *                       type: integer
- *
  *   post:
  *     summary: Create a new user
  *     requestBody:
