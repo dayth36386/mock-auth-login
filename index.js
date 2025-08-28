@@ -612,8 +612,8 @@ const users = Array.from({ length: 150 }, (_, i) => ({
   isActive: Math.random() < 0.5, // random true/false
   isLocked: Math.random() < 0.5, // random true/false
   failedLoginAttempts: 0,
-  lastFailedLogin_at: new Date().toISOString(),
-  lastLoginAt: new Date().toISOString(),
+  lastFailedLogin_at: null,
+  lastLoginAt: null,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   deletedAt: null,
@@ -734,7 +734,7 @@ app.post("/v1/api/users", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not_found"
+ *               message: user.not_found
  */
 app.put("/v1/api/users/:id", (req, res) => {
   const index = users.findIndex((u) => u.id === req.params.id);
@@ -780,7 +780,7 @@ app.put("/v1/api/users/:id", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not_found"
+ *               message: user.not_found
  */
 app.delete("/v1/api/users/:id", (req, res) => {
   const index = users.findIndex((u) => u.id === req.params.id);
@@ -928,7 +928,7 @@ app.delete("/v1/api/users/:id", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not_found"
+ *               message: user.not_found
  */
 
 /**
@@ -963,7 +963,7 @@ app.delete("/v1/api/users/:id", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not_found"
+ *               message: user.not_found
  */
 
 // ---------- GET user by username ----------
@@ -1006,7 +1006,7 @@ app.get("/v1/api/users/username/:username", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not_found"
+ *               message: user.not_found
  */
 
 // ---------- GET user by email ----------
@@ -1055,7 +1055,7 @@ app.get("/v1/api/users/email/:email", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not_found"
+ *               message: user.not_found
  */
 app.patch("/v1/api/users/:id/active", (req, res) => {
   const { id } = req.params;
