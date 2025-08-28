@@ -612,8 +612,8 @@ const users = Array.from({ length: 150 }, (_, i) => ({
   isActive: Math.random() < 0.5, // random true/false
   isLocked: Math.random() < 0.5, // random true/false
   failedLoginAttempts: 0,
-  lastFailedLogin_at: null,
-  lastLoginAt: null,
+  lastFailedLogin_at: new Date().toISOString(),
+  lastLoginAt: new Date().toISOString(),
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
   deletedAt: null,
@@ -644,7 +644,7 @@ app.get("/v1/api/users", (req, res) => {
 // GET user by id (return all fields)
 app.get("/v1/api/users/:id", (req, res) => {
   const user = users.find((u) => u.id === req.params.id);
-  if (!user) return res.status(404).json({ message: "user.not.found" });
+  if (!user) return res.status(404).json({ message: "user.not_found" });
   res.json(user);
 });
 
@@ -734,11 +734,11 @@ app.post("/v1/api/users", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not.found
+ *               message: user.not_found"
  */
 app.put("/v1/api/users/:id", (req, res) => {
   const index = users.findIndex((u) => u.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: "user.not.found" });
+  if (index === -1) return res.status(404).json({ message: "user.not_found" });
   users[index] = {
     ...users[index],
     ...req.body,
@@ -780,11 +780,11 @@ app.put("/v1/api/users/:id", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not.found
+ *               message: user.not_found"
  */
 app.delete("/v1/api/users/:id", (req, res) => {
   const index = users.findIndex((u) => u.id === req.params.id);
-  if (index === -1) return res.status(404).json({ message: "user.not.found" });
+  if (index === -1) return res.status(404).json({ message: "user.not_found" });
   const deletedUser = users.splice(index, 1);
   res.json(deletedUser[0]);
 });
@@ -928,7 +928,7 @@ app.delete("/v1/api/users/:id", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not.found
+ *               message: user.not_found"
  */
 
 /**
@@ -963,14 +963,14 @@ app.delete("/v1/api/users/:id", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not.found
+ *               message: user.not_found"
  */
 
 // ---------- GET user by username ----------
 app.get("/v1/api/users/username/:username", (req, res) => {
   const { username } = req.params;
   const user = users.find((u) => u.username === username);
-  if (!user) return res.status(404).json({ message: "user.not.found" });
+  if (!user) return res.status(404).json({ message: "user.not_found" });
   res.json(user);
 });
 
@@ -1006,14 +1006,14 @@ app.get("/v1/api/users/username/:username", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not.found
+ *               message: user.not_found"
  */
 
 // ---------- GET user by email ----------
 app.get("/v1/api/users/email/:email", (req, res) => {
   const { email } = req.params;
   const user = users.find((u) => u.email === email);
-  if (!user) return res.status(404).json({ message: "user.not.found" });
+  if (!user) return res.status(404).json({ message: "user.not_found" });
   res.json(user);
 });
 
@@ -1055,7 +1055,7 @@ app.get("/v1/api/users/email/:email", (req, res) => {
  *         content:
  *           application/json:
  *             example:
- *               message: user.not.found
+ *               message: user.not_found"
  */
 app.patch("/v1/api/users/:id/active", (req, res) => {
   const { id } = req.params;
@@ -1063,7 +1063,7 @@ app.patch("/v1/api/users/:id/active", (req, res) => {
 
   const user = users.find((u) => u.id === id);
   if (!user) {
-    return res.status(404).json({ message: "user.not.found" });
+    return res.status(404).json({ message: "user.not_found" });
   }
 
   user.isActive = isActive;
