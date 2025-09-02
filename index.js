@@ -1154,6 +1154,245 @@ app.patch("/v1/api/users/:id/active", (req, res) => {
     message: "user.status_updated",
   });
 });
+
+// --- Mock Data 150 row ---
+const sites = [];
+for (let i = 1; i <= 150; i++) {
+  const parent_id = i === 1 ? null : Math.floor(Math.random() * (i - 1)) + 1;
+  const hierarchyLevel = parent_id ? 2 : 1;
+  const path = parent_id
+    ? `${parent_id.toString().padStart(4, "0")}/${i
+        .toString()
+        .padStart(4, "0")}`
+    : i.toString().padStart(4, "0");
+
+  sites.push({
+    id: i,
+    parent_id,
+    site_id: i,
+    sortingLevel: Math.ceil(Math.random() * 3),
+    hierarchyLevel,
+    path,
+    name: `Site Name ${i}`,
+    startTerm: "2025-08-19",
+    endTerm: "2025-08-19",
+    tags: [],
+    acquirable: Math.random() > 0.5,
+    status: "active",
+    fiscalPeriod: `collection_period_${Math.ceil(Math.random() * 5)}`,
+    countryID: 123,
+    postalCode: 10000 + i,
+    city: "Bangkok",
+    province: "Bangkok",
+    createdAt: "2025-08-08 00:00:00",
+    totalRevisions: 1,
+  });
+}
+
+/**
+ * @swagger
+ * /sites/site-list:
+ *   get:
+ *     summary: Get all sites
+ *     responses:
+ *       200:
+ *         description: List of sites
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Site'
+ *   post:
+ *     summary: Create new site
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Site'
+ *     responses:
+ *       201:
+ *         description: Site created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Site'
+ *
+ * /sites/{id}:
+ *   get:
+ *     summary: Get site by id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Site found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Site'
+ *       404:
+ *         description: Site not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Site not found
+ *   put:
+ *     summary: Update site by id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Site'
+ *     responses:
+ *       200:
+ *         description: Site updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Site'
+ *       404:
+ *         description: Site not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Site not found
+ *   delete:
+ *     summary: Delete site by id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Site deleted
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Site deleted
+ *               site:
+ *                 id: 1
+ *                 name: Site Name 1
+ *       404:
+ *         description: Site not found
+ *         content:
+ *           application/json:
+ *             example:
+ *               message: Site not found
+ *
+ * components:
+ *   schemas:
+ *     Site:
+ *       type: object
+ *       properties:
+ *         id:
+ *           type: integer
+ *         parent_id:
+ *           type: integer
+ *           nullable: true
+ *         site_id:
+ *           type: integer
+ *         sortingLevel:
+ *           type: integer
+ *         hierarchyLevel:
+ *           type: integer
+ *         path:
+ *           type: string
+ *         name:
+ *           type: string
+ *         startTerm:
+ *           type: string
+ *         endTerm:
+ *           type: string
+ *         tags:
+ *           type: array
+ *           items:
+ *             type: string
+ *         acquirable:
+ *           type: boolean
+ *         status:
+ *           type: string
+ *         fiscalPeriod:
+ *           type: string
+ *         countryID:
+ *           type: integer
+ *         postalCode:
+ *           type: integer
+ *         city:
+ *           type: string
+ *         province:
+ *           type: string
+ *         createdAt:
+ *           type: string
+ *         totalRevisions:
+ *           type: integer
+ */
+
+// --- CRUD Routes ---
+
+// Get all sites
+app.get("/sites/site-list", (req, res) => {
+  res.json(sites);
+});
+
+// Get single site by id
+app.get("/sites/:id", (req, res) => {
+  const site = sites.find((s) => s.id === parseInt(req.params.id));
+  if (!site) return res.status(404).json({ message: "Site not found" });
+  res.json(site);
+});
+
+// Create new site
+app.post("/sites", (req, res) => {
+  const newId = sites.length ? sites[sites.length - 1].id + 1 : 1;
+  const newSite = {
+    id: newId,
+    site_id: newId,
+    hierarchyLevel: req.body.parent_id ? 2 : 1,
+    path: req.body.parent_id
+      ? `${req.body.parent_id.toString().padStart(4, "0")}/${newId
+          .toString()
+          .padStart(4, "0")}`
+      : newId.toString().padStart(4, "0"),
+    totalRevisions: 1,
+    ...req.body,
+  };
+  sites.push(newSite);
+  res.status(201).json(newSite);
+});
+
+// Update site by id
+app.put("/sites/:id", (req, res) => {
+  const index = sites.findIndex((s) => s.id === parseInt(req.params.id));
+  if (index === -1) return res.status(404).json({ message: "Site not found" });
+
+  const updatedSite = { ...sites[index], ...req.body };
+  sites[index] = updatedSite;
+  res.json(updatedSite);
+});
+
+// Delete site by id
+app.delete("/sites/:id", (req, res) => {
+  const index = sites.findIndex((s) => s.id === parseInt(req.params.id));
+  if (index === -1) return res.status(404).json({ message: "Site not found" });
+
+  const deleted = sites.splice(index, 1);
+  res.json({ message: "Site deleted", site: deleted[0] });
+});
+
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
