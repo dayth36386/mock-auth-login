@@ -1219,7 +1219,7 @@ for (let i = 1; i <= 150; i++) {
  *             schema:
  *               $ref: '#/components/schemas/Site'
  *
- * /sites/{id}:
+ * /api/v1/setup/sites/site/{id}:
  *   get:
  *     summary: Get site by id
  *     parameters:
@@ -1349,10 +1349,68 @@ app.get("/sites/site-list", (req, res) => {
 });
 
 // Get single site by id
-app.get("/sites/:id", (req, res) => {
-  const site = sites.find((s) => s.id === parseInt(req.params.id));
-  if (!site) return res.status(404).json({ message: "Site not found" });
-  res.json(site);
+app.get("/api/v1/setup/sites/site/:id", (req, res) => {
+  const id = parseInt(req.params.id, 10);
+  const site = sites.find((s) => s.id === id);
+
+  if (!site) {
+    return res.status(404).json({
+      message: "data not found",
+      lang_key: "site.data_not_found",
+    });
+  }
+
+  // mock parents (จริง ๆ ควร lookup จาก parent_id)
+  const parents = site.parent_id
+    ? [
+        {
+          id: 1,
+          name: [
+            { tenentLocaleId: "uuid-en", value: "site name" },
+            { tenentLocaleId: "uuid-th", value: "ชื่อ site" },
+          ],
+        },
+        {
+          id: 5,
+          name: [
+            { tenentLocaleId: "uuid-en", value: "site name" },
+            { tenentLocaleId: "uuid-th", value: "ชื่อ site" },
+          ],
+        },
+      ]
+    : [];
+
+  res.json({
+    data: {
+      id: site.id,
+      name: [
+        { tenentLocaleID: "tenent-locale-en-uuid", value: site.name },
+        { tenentLocaleID: "tenent-locale-th-uuid", value: `ชื่อ ${site.name}` },
+      ],
+      parent: parents,
+      startTerm: site.startTerm,
+      endTerm: site.endTerm,
+      acquirable: site.acquirable,
+      status: site.status,
+      fiscalPeriod: site.fiscalPeriod,
+      sortingLevel: site.sortingLevel,
+      tags: ["tag1", "tag2", "tag3"],
+      countryID: site.countryID,
+      postalCode: site.postalCode,
+      city: site.city,
+      province: site.province,
+      latitude: 100.0001,
+      longitude: 1.0001,
+      additionalInformation: "...",
+      streetAddress: "silom road",
+      createdAt: site.createdAt,
+      updatedAt: site.createdAt,
+      deletedAt: null,
+      createdBy: { id: 1, username: "userid" },
+      updatedBy: { id: 1, username: "userid" },
+      deletedBy: null,
+    },
+  });
 });
 
 // Create new site
