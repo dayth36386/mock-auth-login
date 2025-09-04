@@ -1160,11 +1160,7 @@ const sites = [];
 for (let i = 1; i <= 150; i++) {
   const parent_id = i === 1 ? null : Math.floor(Math.random() * (i - 1)) + 1;
   const hierarchyLevel = parent_id ? 2 : 1;
-  const path = parent_id
-    ? `${parent_id.toString().padStart(4, "0")}/${i
-        .toString()
-        .padStart(4, "0")}`
-    : i.toString().padStart(4, "0");
+  const path = parent_id ? [parent_id, i] : [i];
 
   sites.push({
     id: i,
@@ -1173,17 +1169,23 @@ for (let i = 1; i <= 150; i++) {
     sortingLevel: Math.ceil(Math.random() * 3),
     hierarchyLevel,
     path,
-    name: `Site Name ${i}`,
+    name: [
+      { tenentLocaleId: "uuid-en", value: `Site Name ${i}` },
+      { tenentLocaleId: "uuid-th", value: `ชื่อ Site ${i}` },
+    ],
     startTerm: "2025-08-19",
     endTerm: "2025-08-19",
-    tags: [],
+    tags: ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6"].slice(
+      0,
+      Math.ceil(Math.random() * 6)
+    ),
     acquirable: Math.random() > 0.5,
     status: "active",
     fiscalPeriod: `collection_period_${Math.ceil(Math.random() * 5)}`,
     countryID: 123,
     postalCode: 10000 + i,
-    city: "Bangkok",
-    province: "Bangkok",
+    city: "bangkok",
+    province: "bangkok",
     createdAt: "2025-08-08 00:00:00",
     totalRevisions: 1,
   });
@@ -1191,37 +1193,131 @@ for (let i = 1; i <= 150; i++) {
 
 /**
  * @swagger
- * /sites/site-list:
+ * /api/v1/setup/sites/site-list:
  *   get:
- *     summary: Get all sites
+ *     summary: Get paginated list of sites
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of sites to return
+ *       - in: query
+ *         name: offset
+ *         schema:
+ *           type: integer
+ *           default: 0
+ *         description: Number of sites to skip
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: JSON string for filtering sites. Supports AND/OR and contains.
  *     responses:
  *       200:
- *         description: List of sites
+ *         description: Paginated list of sites
  *         content:
  *           application/json:
  *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Site'
- *   post:
- *     summary: Create new site
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Site'
- *     responses:
- *       201:
- *         description: Site created
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     items:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                     limit:
+ *                       type: integer
+ *                     offset:
+ *                       type: integer
+ *                     total:
+ *                       type: integer
+ *                     totalByLevel:
+ *                       type: array
+ *                       items:
+ *                         type: integer
+ *       404:
+ *         description: No sites found
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Site'
- *
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: string
+ *                   nullable: true
+ *                 lang_key:
+ *                   type: string
+ */
+app.get("/api/v1/setup/sites/site-list", (req, res) => {
+  // Parse query params for pagination
+  const limit = parseInt(req.query.limit, 10) || 10;
+  const offset = parseInt(req.query.offset, 10) || 0;
+
+  if (!sites || sites.length === 0) {
+    return res.status(404).json({
+      data: null,
+      lang_key: "site.data_not_found",
+    });
+  }
+
+  // --- Search support (like users API) ---
+  let filteredSites = sites;
+  if (req.query.search) {
+    try {
+      const search = JSON.parse(req.query.search);
+
+      const evaluateCondition = (site, condition) => {
+        if (condition.AND) {
+          return condition.AND.every((c) => evaluateCondition(site, c));
+        } else if (condition.OR) {
+          return condition.OR.some((c) => evaluateCondition(site, c));
+        } else {
+          const key = Object.keys(condition)[0];
+          const value = condition[key];
+          if (typeof value === "object" && value.contains) {
+            return (site[key] || "").toString().includes(value.contains);
+          } else {
+            return site[key] === value;
+          }
+        }
+      };
+
+      filteredSites = sites.filter((site) => evaluateCondition(site, search));
+    } catch (error) {
+      return res.status(400).json({ message: "Invalid search format" });
+    }
+  }
+
+  // Paginate
+  const pagedSites = filteredSites.slice(offset, offset + limit);
+
+  // Calculate totalByLevel (mock: count by hierarchyLevel)
+  const levels = {};
+  filteredSites.forEach((site) => {
+    levels[site.hierarchyLevel] = (levels[site.hierarchyLevel] || 0) + 1;
+  });
+  const totalByLevel = Object.values(levels);
+
+  res.json({
+    data: {
+      items: pagedSites,
+      limit,
+      offset,
+      total: filteredSites.length,
+      totalByLevel,
+    },
+  });
+});
+
+/**
+ * @swagger
  * /api/v1/setup/sites/site/{id}:
  *   get:
- *     summary: Get site by id
+ *     summary: Get single site by id
  *     parameters:
  *       - in: path
  *         name: id
@@ -1234,121 +1330,22 @@ for (let i = 1; i <= 150; i++) {
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Site'
+ *               type: object
+ *               properties:
+ *                 data:
+ *                   type: object
  *       404:
  *         description: Site not found
- *         content:
- *           application/json:
- *             example:
- *               message: Site not found
- *   put:
- *     summary: Update site by id
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             $ref: '#/components/schemas/Site'
- *     responses:
- *       200:
- *         description: Site updated
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Site'
- *       404:
- *         description: Site not found
- *         content:
- *           application/json:
- *             example:
- *               message: Site not found
- *   delete:
- *     summary: Delete site by id
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Site deleted
- *         content:
- *           application/json:
- *             example:
- *               message: Site deleted
- *               site:
- *                 id: 1
- *                 name: Site Name 1
- *       404:
- *         description: Site not found
- *         content:
- *           application/json:
- *             example:
- *               message: Site not found
- *
- * components:
- *   schemas:
- *     Site:
- *       type: object
- *       properties:
- *         id:
- *           type: integer
- *         parent_id:
- *           type: integer
- *           nullable: true
- *         site_id:
- *           type: integer
- *         sortingLevel:
- *           type: integer
- *         hierarchyLevel:
- *           type: integer
- *         path:
- *           type: string
- *         name:
- *           type: string
- *         startTerm:
- *           type: string
- *         endTerm:
- *           type: string
- *         tags:
- *           type: array
- *           items:
- *             type: string
- *         acquirable:
- *           type: boolean
- *         status:
- *           type: string
- *         fiscalPeriod:
- *           type: string
- *         countryID:
- *           type: integer
- *         postalCode:
- *           type: integer
- *         city:
- *           type: string
- *         province:
- *           type: string
- *         createdAt:
- *           type: string
- *         totalRevisions:
- *           type: integer
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 lang_key:
+ *                   type: string
  */
-
-// --- CRUD Routes ---
-
-// Get all sites
-app.get("/sites/site-list", (req, res) => {
-  res.json(sites);
-});
-
-// Get single site by id
 app.get("/api/v1/setup/sites/site/:id", (req, res) => {
   const id = parseInt(req.params.id, 10);
   const site = sites.find((s) => s.id === id);
@@ -1413,8 +1410,43 @@ app.get("/api/v1/setup/sites/site/:id", (req, res) => {
   });
 });
 
-// Create new site
-app.post("/sites", (req, res) => {
+/**
+ * @swagger
+ * /api/v1/setup/sites/site:
+ *   post:
+ *     summary: Create new site
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               parent_id:
+ *                 type: integer
+ *               status:
+ *                 type: string
+ *               city:
+ *                 type: string
+ *               province:
+ *                 type: string
+ *               countryID:
+ *                 type: integer
+ *               postalCode:
+ *                 type: integer
+ *     responses:
+ *       201:
+ *         description: Site created
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       400:
+ *         description: Invalid input
+ */
+app.post("/api/v1/setup/sites/site", (req, res) => {
   const newId = sites.length ? sites[sites.length - 1].id + 1 : 1;
   const newSite = {
     id: newId,
@@ -1432,8 +1464,34 @@ app.post("/sites", (req, res) => {
   res.status(201).json(newSite);
 });
 
-// Update site by id
-app.put("/sites/:id", (req, res) => {
+/**
+ * @swagger
+ * /api/v1/setup/sites/site/{id}:
+ *   put:
+ *     summary: Update site by id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Site updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *       404:
+ *         description: Site not found
+ */
+app.put("/api/v1/setup/sites/site/:id", (req, res) => {
   const index = sites.findIndex((s) => s.id === parseInt(req.params.id));
   if (index === -1) return res.status(404).json({ message: "Site not found" });
 
@@ -1441,14 +1499,61 @@ app.put("/sites/:id", (req, res) => {
   sites[index] = updatedSite;
   res.json(updatedSite);
 });
-
-// Delete site by id
-app.delete("/sites/:id", (req, res) => {
+/**
+ * @swagger
+ * /api/v1/setup/sites/site/{id}:
+ *   delete:
+ *     summary: Delete site by id
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Site deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 lang_key:
+ *                   type: string
+ *             example:
+ *               message: deleted successfully
+ *               lang_key: site.deleted_success
+ *       400:
+ *         description: Unable to delete site
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 lang_key:
+ *                   type: string
+ *             example:
+ *               message: unable to delete
+ *               lang_key: site.unable_to_delete
+ */
+app.delete("/api/v1/setup/sites/site/:id", (req, res) => {
   const index = sites.findIndex((s) => s.id === parseInt(req.params.id));
-  if (index === -1) return res.status(404).json({ message: "Site not found" });
+  if (index === -1) {
+    return res.status(400).json({
+      message: "unable to delete",
+      lang_key: "site.unable_to_delete",
+    });
+  }
 
-  const deleted = sites.splice(index, 1);
-  res.json({ message: "Site deleted", site: deleted[0] });
+  sites.splice(index, 1);
+  res.status(200).json({
+    message: "deleted successfully",
+    lang_key: "site.deleted_success",
+  });
 });
 
 app.listen(PORT, () => {
