@@ -1159,7 +1159,7 @@ app.patch("/v1/api/users/:id/active", (req, res) => {
 const sites = [];
 for (let i = 1; i <= 150; i++) {
   const parent_id = i === 1 ? null : Math.floor(Math.random() * (i - 1)) + 1;
-  const hierarchyLevel = parent_id ? 2 : 1;
+  const hierarchyLevel = parent_id ? Math.ceil(Math.random() * 6) : 1;
   const path = parent_id ? [parent_id, i] : [i];
 
   sites.push({
@@ -1169,13 +1169,10 @@ for (let i = 1; i <= 150; i++) {
     sortingLevel: Math.ceil(Math.random() * 3),
     hierarchyLevel,
     path,
-    name: [
-      { tenentLocaleId: "uuid-en", value: `Site Name ${i}` },
-      { tenentLocaleId: "uuid-th", value: `ชื่อ Site ${i}` },
-    ],
+    name: `Site Name Company Testing ${i}`,
     startTerm: "2025-08-19",
     endTerm: "2025-08-19",
-    tags: ["tag1", "tag2", "tag3", "tag4", "tag5", "tag6"].slice(
+    tags: ["GomuGomu", "TuTu", "Orange", "Apple", "Banana", "CoCoNut"].slice(
       0,
       Math.ceil(Math.random() * 6)
     ),
@@ -1317,13 +1314,14 @@ app.get("/api/v1/setup/sites/site-list", (req, res) => {
  * @swagger
  * /api/v1/setup/sites/site/{id}:
  *   get:
- *     summary: Get single site by id
+ *     summary: Get site by id
  *     parameters:
  *       - in: path
  *         name: id
  *         required: true
  *         schema:
  *           type: integer
+ *         description: Site ID
  *     responses:
  *       200:
  *         description: Site found
@@ -1334,6 +1332,69 @@ app.get("/api/v1/setup/sites/site-list", (req, res) => {
  *               properties:
  *                 data:
  *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                     name:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           acceptLanguage:
+ *                             type: string
+ *                           value:
+ *                             type: string
+ *                     parent:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           id:
+ *                             type: integer
+ *                           name:
+ *                             type: array
+ *                             items:
+ *                               type: object
+ *                               properties:
+ *                                 acceptLanguage:
+ *                                   type: string
+ *                                 value:
+ *                                   type: string
+ *                     country:
+ *                       type: string
+ *                     latitude:
+ *                       type: number
+ *                     longitude:
+ *                       type: number
+ *                     additionalInformation:
+ *                       type: string
+ *                     streetAddress:
+ *                       type: string
+ *                     fiscalPeriod:
+ *                       type: string
+ *                     fiscalPeriodId:
+ *                       type: string
+ *                     tags:
+ *                       type: array
+ *                       items:
+ *                         type: string
+ *                     createdBy:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         username:
+ *                           type: string
+ *                     updatedBy:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: integer
+ *                         username:
+ *                           type: string
+ *                     deletedBy:
+ *                       type: object
+ *                       nullable: true
  *       404:
  *         description: Site not found
  *         content:
@@ -1357,52 +1418,38 @@ app.get("/api/v1/setup/sites/site/:id", (req, res) => {
     });
   }
 
-  // mock parents (จริง ๆ ควร lookup จาก parent_id)
-  const parents = site.parent_id
-    ? [
-        {
-          id: 1,
-          name: [
-            { tenentLocaleId: "uuid-en", value: "site name" },
-            { tenentLocaleId: "uuid-th", value: "ชื่อ site" },
-          ],
-        },
-        {
-          id: 5,
-          name: [
-            { tenentLocaleId: "uuid-en", value: "site name" },
-            { tenentLocaleId: "uuid-th", value: "ชื่อ site" },
-          ],
-        },
-      ]
-    : [];
+  // ดึง parent จริงจาก mock
+  let parents = [];
+  let currentParentId = site.parent_id;
+  while (currentParentId) {
+    const parentSite = sites.find((s) => s.id === currentParentId);
+    if (!parentSite) break;
+    parents.unshift({
+      id: parentSite.id,
+      name: [
+        { acceptLanguage: "en", value: `site name ${parentSite.id}` },
+        { acceptLanguage: "th", value: `ชื่อ site ${parentSite.id}` },
+      ],
+    });
+    currentParentId = parentSite.parent_id;
+  }
 
   res.json({
     data: {
-      id: site.id,
+      ...site,
       name: [
-        { tenentLocaleID: "tenent-locale-en-uuid", value: site.name },
-        { tenentLocaleID: "tenent-locale-th-uuid", value: `ชื่อ ${site.name}` },
+        { acceptLanguage: "en", value: `site name ${site.id}` },
+        { acceptLanguage: "th", value: `ชื่อ site ${site.id}` },
       ],
       parent: parents,
-      startTerm: site.startTerm,
-      endTerm: site.endTerm,
-      acquirable: site.acquirable,
-      status: site.status,
-      fiscalPeriod: site.fiscalPeriod,
-      sortingLevel: site.sortingLevel,
-      tags: ["tag1", "tag2", "tag3"],
-      countryID: site.countryID,
-      postalCode: site.postalCode,
-      city: site.city,
-      province: site.province,
+      country: "Thailand",
       latitude: 100.0001,
       longitude: 1.0001,
-      additionalInformation: "...",
+      additionalInformation: site.additionalInformation || "...",
       streetAddress: "silom road",
-      createdAt: site.createdAt,
-      updatedAt: site.createdAt,
-      deletedAt: null,
+      fiscalPeriod: site.fiscalPeriod || "fiscal period value",
+      fiscalPeriodId: "fiscal period uuid",
+      tags: site.tags || [],
       createdBy: { id: 1, username: "userid" },
       updatedBy: { id: 1, username: "userid" },
       deletedBy: null,
