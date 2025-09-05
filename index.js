@@ -1426,10 +1426,7 @@ app.get("/api/v1/setup/sites/site/:id", (req, res) => {
     if (!parentSite) break;
     parents.unshift({
       id: parentSite.id,
-      name: [
-        { acceptLanguage: "en", value: `site name ${parentSite.id}` },
-        { acceptLanguage: "th", value: `ชื่อ site ${parentSite.id}` },
-      ],
+      name: parentSite.name,
     });
     currentParentId = parentSite.parent_id;
   }
