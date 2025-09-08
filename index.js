@@ -585,7 +585,7 @@ app.get("/api/tenant", (req, res) => {
 const { v4: uuidv4 } = require("uuid");
 
 // สร้าง mock user data 150 รายการ
-const users = Array.from({ length: 150 }, (_, i) => ({
+const users = Array.from({ length: 1000 }, (_, i) => ({
   id: `uuid-user-${i + 1}`,
   username: `user${i + 1}`,
   email: `user${i + 1}@example.com`,
